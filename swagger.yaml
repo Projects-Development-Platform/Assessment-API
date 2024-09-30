@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: User Management API
   version: 1.0.0
-  description: A simple Express API for managing users
+  description: A simple Express API for managing users and file uploads
 servers:
   - url: https://assessment-api-biay.onrender.com
 paths:
@@ -122,6 +122,55 @@ paths:
           description: User not found
         '500':
           description: Internal server error
+  /upload:
+    post:
+      summary: Upload a file
+      tags:
+        - Files
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploadResponse'
+        '400':
+          description: File is required
+        '500':
+          description: Internal server error
+  /file/{filename}:
+    get:
+      summary: Get a file by filename
+      tags:
+        - Files
+      parameters:
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File retrieved successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+        '500':
+          description: Internal server error
 
 components:
   schemas:
@@ -161,3 +210,13 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/User'
+    FileUploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: string
+          description: File path

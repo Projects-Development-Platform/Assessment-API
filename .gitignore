@@ -36,3 +36,6 @@ npm-debug.log
 *lock.json
 *lock.yaml
 *lock.yml
+
+uploads
+uploads/*

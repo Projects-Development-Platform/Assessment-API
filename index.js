@@ -4,6 +4,8 @@ const errorHandler = require("./error.middleware");
 const dotenv = require("dotenv");
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
+const upload = require("./multer.config");
+const path = require('path');
 
 dotenv.config();
 
@@ -58,7 +60,7 @@ const User = mongoose.model("User", UserSchema);
 app.post("/users", async (req, res, next) => {
     try {
         const user = await new User(req.body).save();
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "User created successfully",
             data: user,
@@ -72,7 +74,7 @@ app.post("/users", async (req, res, next) => {
 app.get("/users", async (req, res, next) => {
     try {
         const users = await User.find();
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Users retrieved successfully",
             data: users,
@@ -92,7 +94,7 @@ app.get("/users/:id", async (req, res, next) => {
                 message: "User not found"
             });
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "User retrieved successfully",
             data: user,
@@ -114,7 +116,7 @@ app.put("/users/:id", async (req, res, next) => {
                 message: "User not found",
             });
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "User updated successfully",
             data: updatedUser,
@@ -133,7 +135,7 @@ app.delete("/users/:id", async (req, res, next) => {
                 message: "User not found",
             });
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "User deleted successfully",
             data: deletedUser,
@@ -142,6 +144,37 @@ app.delete("/users/:id", async (req, res, next) => {
         next(error);
     }
 });
+
+
+app.get("/file/:filename", async (req, res, next) => {
+    try {
+        const filename = req.params.filename;
+        console.log("filename", filename);
+        return res.status(200).sendFile(path.resolve(__dirname,'uploads', filename));
+    } catch (error) {
+        next(error);
+    }
+})
+
+app.post("/upload", upload.single("photo"), async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "File is required",
+            });
+        }
+        return res.status(201).json({
+            success: true,
+            message: "File uploaded successfully",
+            data: "/file/" + req.file.filename,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+
 
 app.use(errorHandler);
 
@@ -155,7 +188,6 @@ app.use((req, res, next) => {
 });
 
 
-// Start server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
