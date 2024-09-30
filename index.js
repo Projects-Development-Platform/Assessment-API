@@ -6,11 +6,16 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const upload = require("./multer.config");
 const path = require('path');
+const cors = require('cors');
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+app.use(cors({
+    origin: "*",
+}));
 
 const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
