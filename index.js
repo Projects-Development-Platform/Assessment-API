@@ -2,10 +2,16 @@ const express = require("express");
 const mongoose = require("mongoose");
 const errorHandler = require("./error.middleware");
 const dotenv = require("dotenv");
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+
 dotenv.config();
 
 const app = express();
 const port = 3000;
+
+const swaggerDocument = YAML.load('./swagger.yaml');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Middleware
 app.use(express.json());
@@ -34,7 +40,6 @@ const UserSchema = new mongoose.Schema({
     },
     photo: {
         type: String,
-        required: true
     },
     department: {
         type: String,
@@ -50,64 +55,89 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", UserSchema);
 
-// Create a new user
-app.post("/users", async (req, res) => {
+app.post("/users", async (req, res, next) => {
     try {
-        const user = new User(req.body);
-        const savedUser = await user.save();
-        res.status(201).json(savedUser);
+        const user = await new User(req.body).save();
+        res.status(201).json({
+            success: true,
+            message: "User created successfully",
+            data: user,
+        });
     } catch (error) {
         next(error);
     }
 });
 
-// Get all users
-app.get("/users", async (req, res) => {
+
+app.get("/users", async (req, res, next) => {
     try {
         const users = await User.find();
-        res.status(200).json(users);
+        res.status(200).json({
+            success: true,
+            message: "Users retrieved successfully",
+            data: users,
+        });
     } catch (error) {
         next(error);
     }
 });
 
-// Get a user by ID
-app.get("/users/:id", async (req, res) => {
+
+app.get("/users/:id", async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
         }
-        res.status(200).json(user);
+        res.status(200).json({
+            success: true,
+            message: "User retrieved successfully",
+            data: user,
+        });
     } catch (error) {
         next(error);
     }
 });
 
-// Update a user by ID
-app.put("/users/:id", async (req, res) => {
+app.put("/users/:id", async (req, res, next) => {
     try {
         const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
         });
         if (!updatedUser) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
         }
-        res.status(200).json(updatedUser);
+        res.status(200).json({
+            success: true,
+            message: "User updated successfully",
+            data: updatedUser,
+        });
     } catch (error) {
         next(error);
     }
 });
 
-// Delete a user by ID
-app.delete("/users/:id", async (req, res) => {
+app.delete("/users/:id", async (req, res, next) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
         }
-        res.status(200).json({ message: "User deleted successfully" });
+        res.status(200).json({
+            success: true,
+            message: "User deleted successfully",
+            data: deletedUser,
+        });
     } catch (error) {
         next(error);
     }
@@ -115,7 +145,7 @@ app.delete("/users/:id", async (req, res) => {
 
 app.use(errorHandler);
 
-app.use((req, res) => {
+app.use((req, res, next) => {
     res
         .status(404)
         .json({
@@ -123,8 +153,6 @@ app.use((req, res) => {
             message: `The route '${req.method} ${req.url}' doesn't exists on the API!`
         });
 });
-
-
 
 
 // Start server
